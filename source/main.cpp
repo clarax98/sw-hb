@@ -1,44 +1,65 @@
-#include <switch.h>								//The nxlib header file. It includes the functions which allow you to talk to the switch software/hardware
-#include <stdio.h>								//Used for printf
+// Include the most common headers from the C standard library
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-int main(int argc, char** argv) {				//The main entry point
-  u32 kdown = 0x00000000;						//We save the current button press state in there.
+// Include the main libnx system header, for Switch development
+#include <switch.h>
 
-  socketInitializeDefault();					//Sets up the network sockets for nxlink
-  nxlinkStdio();								//Sets up printf to be passed to our nxlink server on the computer
+// Main program entrypoint
+int main(int argc, char* argv[])
+{
+    // This example uses a text console, as a simple way to output text to the screen.
+    // If you want to write a software-rendered graphics application,
+    //   take a look at the graphics/simplegfx example, which uses the libnx Framebuffer API instead.
+    // If on the other hand you want to write an OpenGL based application,
+    //   take a look at the graphics/opengl set of examples, which uses EGL instead.
+    consoleInit(NULL);
 
-  gfxInitDefault();
+    // Configure our supported input layout: a single player with standard controller styles
+    padConfigureInput(1, HidNpadStyleSet_NpadStandard);
 
-  consoleInit(nullptr);							//Setup the console
+    // Initialize the default gamepad (which reads handheld mode inputs as well as the first connected controller)
+    PadState pad;
+    padInitializeDefault(&pad);
 
-  while(appletMainLoop()) {						//Our main loop. As long as the program shouldn't close, keep executing our code
-    hidScanInput();								//Scans our controllers for any button presses since the last time this function was called
-    kdown = hidKeysDown(CONTROLLER_P1_AUTO);	//Read the last button presses and store them in the kdown variable. CONTROLLER_P1_AUTO reads the values from the currently used controller.
+    // Other initialization goes here. As a demonstration, we print hello world.
+    
 
-	//YOUR CODE GOES HERE
+    // Main loop
+    while (appletMainLoop())
+    {
+        // Scan the gamepad. This should be done once for each frame
+        padUpdate(&pad);
 
-  //Edge detection. We don't want to print "Hello World" while A is pressed. We only want to print it once and then again on the next press
-   if(kdown > kdownOld) {
-       if(kdown & KEY_A)
-           printf("Hello World CLA\n"); //Prints to the console on screen
-           printf("Yeeee\n");
-   }
+        // padGetButtonsDown returns the set of buttons that have been
+        // newly pressed in this frame compared to the previous one
+        u64 kDown = padGetButtonsDown(&pad);
 
-   kdownOld = kdown;
+        if (kDown & HidNpadButton_Plus)
+            break; // break in order to return to hbmenu
 
-   gfxFlushBuffers();   //Finish this frame
-   gfxSwapBuffers();    //Display it on the screen
-   gfxWaitForVsync();   //Wait till the last frame finished displaying before updating to avoid flickering
+        // Your code goes here
+        int pos = 1;
+        printf("Hello World!\n");
+
+        if (kDown & HidNpadButton_A){
+          menu(pos);
+        }
 
 
 
-    if(kdown & KEY_PLUS)						//This isn't a convention but just for consistency. If the Plus button gets pressed, close the program. Most homebrews do that.
-      break;
-  }
 
-  socketExit();									//Clean up after we're done and close our sockets.
 
-  gfxExit();
+        // Update the console, sending a new frame to the display
+        consoleUpdate(NULL);
+    }
 
-  return 0;										//Terminate SUCCESSFULLY
+    // Deinitialize and clean up resources used by the console (important!)
+    consoleExit(NULL);
+    return 0;
+}
+
+void menu(int pos){
+  printf("PRESSED A"+pos);
 }
